@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-dados
+  labels:
+    type: mysql-dados
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath: 
+    path: /meubanco_desafio/
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-dados
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-desafio
+spec:
+  selector:
+    matchLabels:
+      app: mysql-desafio
+  template:
+    metadata:
+      labels:
+        app: mysql-desafio
+    spec:
+      containers:
+      - name: mysql
+        image: wallasmaciel/k8s-mysql-desafio:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: mysql
+        volumeMounts:
+        - name: mysql-dados
+          mountPath: /var/lib/mysql/
+      volumes:
+      - name: mysql-dados
+        persistentVolumeClaim:
+          claimName: mysql-dados
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-desafio
+  labels:
+    app: php-desafio
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: php-desafio
+  template:
+    metadata:
+      labels:
+        app: php-desafio
+    spec:
+      containers:
+      - name: php
+        image: wallasmaciel/k8s-php-desafio:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
